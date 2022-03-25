@@ -23,8 +23,12 @@ class RunThreeJs {
         this.width = this.dom.offsetWidth;
         this.height = this.dom.offsetHeight;
 
+        // collisions
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+
         // this.geometry = new THREE.PlaneBufferGeometry(1, 1, this.planeSegments, this.planeSegments);
-        this.geometry = new THREE.PlaneBufferGeometry(1, 1, this.planeSegments, this.planeSegments);
+        this.geometry = new THREE.BoxGeometry(1, 1, 1, 100, 100, 100);
 
         this.material = new THREE.ShaderMaterial({
             uniforms: {
@@ -34,18 +38,14 @@ class RunThreeJs {
             side: THREE.DoubleSide,
             vertexShader: perlinNoise + vertex,
             fragmentShader: fragment,
-            wireframe: false
+            wireframe: true
         });
 
         // setup
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(70, this.width / this.height, 100, 2000);
-        this.camera.position.z = 600;
-        this.updateCameraFOV();
-
-        // collisions
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
+        this.camera.position.z = 1200;
+        // this.updateCameraFOV();
 
         // renderer
         this.renderer = new THREE.WebGLRenderer({
@@ -83,6 +83,8 @@ class RunThreeJs {
 
     addObjects() {
         this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.mesh.scale.set(1000, 1000, 1);
+
         this.scene.add(this.mesh);
     }
 
@@ -111,26 +113,6 @@ class RunThreeJs {
 
             this.scene.add(mesh);
 
-            img.addEventListener('click', e => {
-                this.tl = gsap.timeline()
-                    .to(material.uniforms.uCorners.value, {
-                        x: 1,
-                        duration: this.cornerAnimationDuration,
-                    })
-                    .to(material.uniforms.uCorners.value, {
-                        y: 1,
-                        duration: this.cornerAnimationDuration,
-                    }, 0.1)
-                    .to(material.uniforms.uCorners.value, {
-                        z: 1,
-                        duration: this.cornerAnimationDuration,
-                    }, 0.2)
-                    .to(material.uniforms.uCorners.value, {
-                        w: 1,
-                        duration: this.cornerAnimationDuration,
-                    }, 0.3);
-            });
-
             return { img, mesh, top, left, width, height };
         });
     }
@@ -150,14 +132,31 @@ class RunThreeJs {
     }
 
     resize() {
+        this.width = this.dom.offsetWidth;
+        this.height = this.dom.offsetHeight;
+
+        // Update camera
+        this.camera.aspect = this.width / this.height;
+        this.camera.updateProjectionMatrix();
+
+        // Update renderer
+        this.renderer.setSize(this.width, this.height);
+
+        // this.updateCameraFOV();
     }
 
     render() {
         this.time += 0.05;
-
         // this.setPositions();
 
-        this.renderer.render(this.scene, this.camera);
+        this.mesh.rotation.x = this.time * 0.01;
+        this.mesh.rotation.y = this.time * 0.005;
+        this.mesh.rotation.z = this.time * 0.007;
+
+        this.material.uniforms.time.value = this.time;
+
+        const newLocal = this;
+        newLocal.renderer.render(this.scene, this.camera);
 
         // For postprocess use
         // this.composer.render(this.scene, this.camera);
